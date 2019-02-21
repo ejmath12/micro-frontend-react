@@ -2,6 +2,8 @@ import PropTypes from 'prop-types'
 import React, { Component } from 'react'
 import Cookies from 'universal-cookie';
 import { BrowserRouter, Switch, Route } from 'react-router-dom';
+import history from './history';
+
 import {
     Button,
     Container,
@@ -207,7 +209,8 @@ class FormSignInForm extends Component {
         const cookies = new Cookies();
         cookies.set('Authorization', auth, { path: '/' });
         console.log(auth);
-        this.props.history.push("/products")
+        history.push("/products")
+        window.location.reload();
     }
     submit = () => {
         this.state.username=this.state.email;
@@ -220,7 +223,7 @@ class FormSignInForm extends Component {
                 'Accepts':'application/json'
             },
             body: JSON.stringify(this.state)
-        }) .then(res => res.ok ? res.status == 200? this.addCookie(res):this.setState({flag:"Invalid login. Please try again!"}): res.json().then(err => Promise.reject(err)));
+        }) .then(res => res.ok ? res.status == 200? this.addCookie(res):this.setState({flag:"Invalid login. Please try again!"}): this.setState({flag:"Invalid login. Please try again!"}));
 
     }
     render(){
@@ -295,7 +298,7 @@ class DesktopContainer extends Component {
         >
         <Container>
         <Menu.Item as='a' active>
-        Home
+        Shutterfly
         </Menu.Item>
            <Menu.Item position='right'>
         <Button as='a' inverted={!fixed} onClick={this.signIn}>
@@ -314,10 +317,110 @@ class DesktopContainer extends Component {
     }
 }
 
+class Products extends Component {
+    constructor(props) {
+        super(props)
+        this.state = {products:[]};
+ }
+    componentDidMount() {
+        fetch('http://localhost:8080/product-service/products/all', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJlam1hdGhld0Bhc3UuZWR1MTIxMjMyIiwiZXhwIjoxNTUxNTUzNDEyfQ.__7O9BD_3v5_Fs6kS_gDzb1EOi1Dl6GgyjnQoNXxZD8hP3raIsFdaol3h30jReTNI8932tKaOclvh_BA-yt0mQ',
+                'Accepts':'application/json'
+            }
+        }).then(data => data.json())
+            .then((data) => { this.setState({ products: data }) });
+    }
+    render() {
+        return (
+            <Container text>
+                <Header
+                    as='h2'
+                    content={this.state.products}
+                    inverted
+                    style={{
+                        fontSize:  '1em',
+                        fontWeight: 'normal',
+                        marginBottom: '0.5em',
+                        marginTop: '0.5em',
+                    }}
+                />
+            </Container>
+        )
+    }
+}
+class ProductContainer extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {signIn: false}
+    }
+    signIn = () => {
+        this.setState({
+            signIn: !this.state.signIn
+        })
+    }
+    hideFixedMenu = () => this.setState({ fixed: false })
+    showFixedMenu = () => this.setState({ fixed: true })
+
+    render() {
+        const { children } = this.props
+        const { fixed } = this.state
+
+        return (
+            <Responsive getWidth={getWidth} minWidth={Responsive.onlyTablet.minWidth}>
+                <Visibility
+                    once={false}
+                    onBottomPassed={this.showFixedMenu}
+                    onBottomPassedReverse={this.hideFixedMenu}
+                >
+                    <Segment
+                        inverted
+                        textAlign='center'
+                        style={{ minHeight: 960, padding: '1em 0em' }}
+                        vertical
+                    >
+                        <Menu
+                            fixed={fixed ? 'top' : null}
+                            inverted={!fixed}
+                            pointing={!fixed}
+                            secondary={!fixed}
+                            size='large'
+                        >
+                            <Container>
+                                <Menu.Item as='a' active>
+                                    Shutterfly
+                                </Menu.Item>
+                                <Menu.Item position='right'>
+                                    <Button as='a' inverted={!fixed} onClick={this.signIn}>
+                                        Cart
+                                    </Button>
+                                    <Button as='a' inverted={!fixed} onClick={this.signIn}>
+                                        Logout
+                                    </Button>
+                                </Menu.Item>
+                            </Container>
+                        </Menu>
+                        <Products/>
+                    </Segment>
+                </Visibility>
+
+                {children}
+            </Responsive>
+        )
+    }
+}
+
 DesktopContainer.propTypes = {
     children: PropTypes.node,
 }
 
+
+const ResponsiveContainer1 = ({ children }) => (
+    <div>
+        <ProductContainer>{children}</ProductContainer>
+    </div>
+)
 
 const ResponsiveContainer = ({ children }) => (
 <div>
@@ -330,26 +433,7 @@ ResponsiveContainer.propTypes = {
 }
 
 const ProductpageLayout = () => (
-    <ResponsiveContainer>
-        <Segment style={{ padding: '8em 0em' }} vertical>
-            <Grid container stackable verticalAlign='middle'>
-                <Grid.Row>
-                    <Grid.Column width={8}>
-                        <Header as='h3' style={{ fontSize: '2em' }}>
-                            "products Books"
-                        </Header>
-                        <p style={{ fontSize: '1.33em' }}>Our talented designers will curate your photos and make a photo book for you. Buy it only if you like it!</p>
-                    </Grid.Column >
-                    <Grid.Column width={8}>
-                        <Header as='h3' style={{ fontSize: '2em' }}>
-                            "Calendars, Cards & Much More"
-                        </Header>
-                        <p style={{ fontSize: '1.33em' }}>You get to choose from a huge collection of themes for your custom calendars, cards and cups with your photos imprinted</p>
-                    </Grid.Column >
-                </Grid.Row>
-            </Grid>
-        </Segment>
-    </ResponsiveContainer>
+    <ResponsiveContainer1/>
 )
 const HomepageLayout = () => (
 <ResponsiveContainer>
